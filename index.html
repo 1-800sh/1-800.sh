@@ -4,65 +4,252 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>1-800</title>
-
+<link rel="icon" href="favicon.ico" />
 <style>
   * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    margin: 0; padding: 0; box-sizing: border-box;
     font-family: "Courier New", monospace;
     user-select: none;
     cursor: crosshair;
   }
-
   html, body {
     height: 100%;
     background: #000;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    color: #f2f2f2;
+    overflow-x: hidden;
+    overflow-y: hidden;
   }
+  body.snow-active { overflow-y: auto; }
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: -1;
+  }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: #333; }
+  ::-webkit-scrollbar-track { background: #000; }
 
+  #enterScreen {
+    position: fixed; inset: 0;
+    display: flex; justify-content: center; align-items: center;
+    background: #000; z-index: 5000;
+  }
   #enterText {
-    font-size: 50px;
-    letter-spacing: 4px;
-    background: none;
-    border: 1px solid #fff;
-    border-radius: 4px;
-    color: #fff;
-    padding: 12px 30px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: 0.2s;
+    font-size: 14px; letter-spacing: 4px; opacity: 0;
+    animation: fadePulse 2s infinite;
+    background: none; border: 1px solid #fff; border-radius: 4px;
+    color: #fff; font-family: inherit; cursor: pointer;
+    padding: 12px 30px; text-transform: uppercase;
   }
+  @keyframes fadePulse { 0%,100%{opacity:0;} 50%{opacity:1;} }
+  #enterScreen.fadeOut { animation: fadeOut 1.2s forwards; }
+  @keyframes fadeOut { to { opacity:0; pointer-events:none; } }
 
-  #enterText:hover {
-    background: #111;
+  .top-links {
+    position: fixed; top: 20px; right: 25px;
+    display: flex; flex-direction: column; text-align: right;
+    z-index: 20; gap: 8px; font-size: 11px; letter-spacing: 2px;
+  }
+  .top-links a { color: #aaa; text-decoration: none; transition: 0.2s; }
+  .top-links a:hover { color: #fff; text-decoration: underline; }
+
+  header { text-align: center; padding: 40px 0 20px; user-select: text; }
+  .title { font-size: 36px; letter-spacing: 6px; font-weight: bold; text-transform: uppercase; }
+  .subtitle { font-size: 12px; opacity: 0.25; margin-top: 4px; text-transform: uppercase; }
+
+  .main-content { display: flex; justify-content: center; padding: 40px 20px; }
+  .member-grid { display: flex; flex-direction: column; align-items: center; gap: 40px; max-width: 300px; margin: 0 auto; }
+  .member-tile { text-align: center; cursor: pointer; transition: 0.3s ease; width: 100%; }
+  .member-tile:hover { opacity:0.8; filter: brightness(0.7); }
+  .member-pfp, .modal-pfp {
+    width: 80px; height: 80px; border: 1px solid #222;
+    background: #000 center/cover no-repeat;
+    margin: 0 auto; border-radius: 0; box-shadow: 0 0 15px rgba(255,255,255,0.08);
+    transition: 0.3s;
+  }
+  .member-pfp:hover, .modal-pfp:hover { box-shadow: 0 0 25px rgba(255,255,255,0.15); }
+  .member-name { font-size: 14px; opacity: 0.85; letter-spacing: 2px; margin-top: 10px; user-select: text; }
+
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal.show { display: flex; }
+  .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; }
+  .modal-card {
+    background: #121212; border:1px solid #444; border-radius: 5px;
+    display:flex; padding:20px; width:520px; box-shadow:0 0 20px rgba(0,0,0,0.8);
+    z-index: 1001;
+  }
+  .modal-left { width: 150px; border-right:1px solid #333; padding-right: 15px; display:flex; flex-direction:column; align-items:center; }
+  .modal-pfp { width: 120px; height:120px; background-color:#222; background-size:cover; border-radius:0; box-shadow:0 0 25px rgba(255,255,255,0.2); margin-bottom:15px; }
+  .modal-name { font-size:22px; font-weight:900; letter-spacing:3px; color:#fff; text-align:center; margin-bottom:15px; }
+  .modal-right { flex:1; padding-left:15px; display:flex; flex-direction:column; }
+  .modal-status { background:#1c1c1c; color:#ccc; padding:15px; border-radius:6px; font-size:14px; line-height:1.6; margin-bottom:12px; user-select:text; }
+  .modal-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:5px; }
+  .action-pill { background:#222; color:#eee; padding:8px 12px; font-size:11px; letter-spacing:2px; border-radius:3px; border:1px solid #333; text-transform:uppercase; text-decoration:none; transition:0.2s; }
+  .action-pill:hover { background:#333; color:#fff; }
+
+  #snow-container { position: fixed; inset:0; pointer-events:none; z-index:15; }
+  .snowflake {
+    position:absolute;
+    background:white;
+    opacity:0;
+    transition: opacity 1s ease-in;
   }
 </style>
 </head>
-
 <body>
 
+<!-- 🔊 AUDIO -->
 <audio id="bgMusic" src="background.mp3" loop></audio>
 
-<button id="enterText">WE LIKE KIDS</button>
+<div id="enterScreen">
+  <button id="enterText">CLICK TO ENTER</button>
+</div>
+
+<div class="top-links">
+  <a href="#">Archive</a>
+  <a href="https://t.me/one800AE" target="_blank">Telegram</a>
+  <a href="#">Doxbin</a>
+  <a href="#">Pub Chat</a>
+</div>
+
+<header>
+  <div class="title">1-800</div>
+  <div class="subtitle">Death To All</div>
+</header>
+
+<main class="main-content">
+  <div class="member-grid" id="memberGrid"></div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-left">
+      <div class="modal-pfp" id="modalPfp"></div>
+      <div class="modal-name" id="modalName"></div>
+    </div>
+    <div class="modal-right">
+      <div class="modal-status" id="modalStatus"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+</div>
+
+<div id="snow-container"></div>
 
 <script>
-const btn = document.getElementById("enterText");
-const music = document.getElementById("bgMusic");
+const members = [
+  { name: "scrapted", img: "scrapted.jpg", status: "God didn’t make me soft—He made me a weapon.", telegram:["https://t.me/baits"] },
+  { name: "Pure", img: "pure.jpg", status: "I cut when I'm bored", telegram:["https://t.me/ragingboners","https://t.me/puresjournal"] },
+  { name: "Rezi (INACTIVE)", img: "rezi.jpg", status: "I wanna wear her skin", telegram:["https://t.me/rezi_lol"] },
+  { name: "Doctor", img: "doctor.jpg", status: "clinical precision", telegram:["https://t.me/UnofficialAgent","https://t.me/DoctorsBlackBook"] },
+  { name: "Geld", img: "geld.jpg", status: "im a dirty little fag", telegram:["https://t.me/COC9DODLXMXX7E9EKXMXNXYX8ZOWP2L2"] },
+];
 
-btn.addEventListener("click", () => {
-  music.volume = 0.5;
-  music.play().catch(() => {});
+const grid = document.getElementById("memberGrid");
+const modal = document.getElementById("modal");
+const modalPfp = document.getElementById("modalPfp");
+const modalName = document.getElementById("modalName");
+const modalStatus = document.getElementById("modalStatus");
+const modalActions = document.getElementById("modalActions");
+const enterScreen = document.getElementById("enterScreen");
+const snowContainer = document.getElementById("snow-container");
+const bgMusic = document.getElementById("bgMusic");
 
-  // change text permanently
-  btn.textContent = "WE ARE PEDOS AND EXTORTERS - SITE BREACHED XD";
+let typingInterval;
+let flakes = [];
+const flakesCount = 100;
 
-  // disable further clicks
-  btn.style.pointerEvents = "none";
+members.forEach(member => {
+  const tile = document.createElement("div");
+  tile.className = "member-tile";
+  const pfp = document.createElement("div");
+  pfp.className = "member-pfp";
+  pfp.style.backgroundImage = `url('${member.img}')`;
+  const name = document.createElement("div");
+  name.className = "member-name";
+  name.textContent = member.name;
+  tile.appendChild(pfp);
+  tile.appendChild(name);
+  tile.addEventListener("click", () => openMemberModal(member));
+  grid.appendChild(tile);
 });
+
+function openMemberModal(member) {
+  modal.classList.add("show");
+  modalPfp.style.backgroundImage = `url('${member.img}')`;
+  modalName.textContent = member.name;
+  modalStatus.textContent = "";
+  modalActions.innerHTML = "";
+  clearInterval(typingInterval);
+  typeStatus(member.status);
+  if(member.telegram) member.telegram.forEach(url => createAction("Telegram", url));
+}
+
+function createAction(label, url) {
+  const a = document.createElement("a");
+  a.className = "action-pill";
+  a.href = url;
+  a.target = "_blank";
+  a.textContent = label;
+  modalActions.appendChild(a);
+}
+
+function typeStatus(text) {
+  let i = 0;
+  modalStatus.textContent = "";
+  clearInterval(typingInterval);
+  typingInterval = setInterval(() => {
+    if(i < text.length) modalStatus.textContent += text[i++];
+    else clearInterval(typingInterval);
+  }, 50);
+}
+
+document.querySelector(".modal-backdrop").addEventListener("click", () => {
+  modal.classList.remove("show");
+});
+
+enterScreen.addEventListener("click", () => {
+  enterScreen.classList.add("fadeOut");
+
+  bgMusic.volume = 0.5;
+  bgMusic.play().catch(() => {});
+
+  setTimeout(() => {
+    enterScreen.style.display = "none";
+    document.body.classList.add("snow-active");
+    startSnow();
+  }, 1200);
+
+  document.body.style.overflow = "auto";
+});
+
+function random(min,max){ return min + Math.random()*(max-min); }
+
+function createFlake(){
+  const flake = document.createElement("div"); 
+  flake.className = "snowflake";
+  flake.style.width = random(1,6) + "px"; 
+  flake.style.height = random(1,3) + "px";
+  flake.dataset.speed = random(0.5,2);
+  flake.dataset.x = Math.random() * window.innerWidth;
+  flake.dataset.y = Math.random() * window.innerHeight;
+  snowContainer.appendChild(flake); 
+  flakes.push(flake);
+  setTimeout(() => { flake.style.opacity = random(0.6,1); }, 50);
+}
+
+function startSnow(){ for(let i=0;i<flakesCount;i++) createFlake(); animateSnow(); }
+
+function animateSnow(){
+  flakes.forEach(f=>{
+    f.dataset.y = +f.dataset.y + +f.dataset.speed;
+    if(+f.dataset.y > window.innerHeight) f.dataset.y = -10;
+    f.style.transform = `translate(${f.dataset.x}px,${f.dataset.y}px)`;
+  });
+  requestAnimationFrame(animateSnow);
+}
 </script>
 
 </body>
